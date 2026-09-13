@@ -1,0 +1,33 @@
+tasks:
+  scad.build:
+    command: 'bash .experiment/scad_build.sh'
+    inputs:
+      - 'project.yml'
+      - 'project.scad.yml'
+      - '.gitmodules'
+      - 'dsg/**'
+      - '.experiment/scad_build.sh'
+      - '.experiment/tool-scad-project.sha'
+    outputs:
+      - 'bld'
+      - 'evidence/scad-build'
+    options:
+      cache: true
+
+  scad.verify:
+    command: 'bash .experiment/scad_verify.sh'
+    inputs:
+      - 'project.yml'
+      - 'project.scad.yml'
+      - '.gitmodules'
+      - 'vrf/**'
+      - 'scripts/**'
+      - '.experiment/scad_verify.sh'
+      - '.experiment/tool-scad-project.sha'
+    outputs:
+      - 'vrf/out'
+      - 'evidence/scad-verify'
+    deps:
+      - 'scad.build'
+    options:
+      cache: true
