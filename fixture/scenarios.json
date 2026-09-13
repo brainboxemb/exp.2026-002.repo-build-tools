@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "note": "Expected results are candidate-neutral experiment requirements.",
+  "scenarios": [
+    {
+      "id": "S01-readme-only",
+      "description": "An unrelated repository README edit must not force product/docs/verification work.",
+      "changed_paths": ["README.md"],
+      "expected_direct": [],
+      "expected_affected": []
+    },
+    {
+      "id": "S02-product-source",
+      "description": "Product source directly affects product build and verification; publication is downstream.",
+      "changed_paths": ["src/product/core.txt"],
+      "expected_direct": ["product.build", "verification"],
+      "expected_affected": ["product.build", "publication", "verification"]
+    },
+    {
+      "id": "S03-test-only",
+      "description": "A test-only change affects verification and downstream publication, but not product build.",
+      "changed_paths": ["tests/unit.txt"],
+      "expected_direct": ["verification"],
+      "expected_affected": ["publication", "verification"]
+    },
+    {
+      "id": "S04-authored-doc",
+      "description": "Authored Markdown affects document assembly and downstream publication, not the diagram producer.",
+      "changed_paths": ["docs/guide.md"],
+      "expected_direct": ["docs.assemble"],
+      "expected_affected": ["docs.assemble", "publication"]
+    },
+    {
+      "id": "S05-diagram-source",
+      "description": "Diagram source affects its producer and then propagates through assembly to publication.",
+      "changed_paths": ["docs/_diagrams/system.json"],
+      "expected_direct": ["docs.diagrams"],
+      "expected_affected": ["docs.assemble", "docs.diagrams", "publication"]
+    },
+    {
+      "id": "S06-verification-config",
+      "description": "Verification-only configuration affects verification and publication, not normal build.",
+      "changed_paths": ["config/verification.json"],
+      "expected_direct": ["verification"],
+      "expected_affected": ["publication", "verification"]
+    },
+    {
+      "id": "S07-publication-only",
+      "description": "Release/publication metadata can affect publication without rebuilding upstream capabilities.",
+      "changed_paths": ["release/notes.md"],
+      "expected_direct": ["publication"],
+      "expected_affected": ["publication"]
+    },
+    {
+      "id": "S08-global-project-config",
+      "description": "Generic project configuration is conservatively global-impact.",
+      "changed_paths": ["project.json"],
+      "expected_direct": [
+        "docs.assemble",
+        "docs.diagrams",
+        "product.build",
+        "publication",
+        "repository.validate",
+        "verification"
+      ],
+      "expected_affected": [
+        "docs.assemble",
+        "docs.diagrams",
+        "product.build",
+        "publication",
+        "repository.validate",
+        "verification"
+      ]
+    },
+    {
+      "id": "S09-generic-tooling",
+      "description": "Generic repository tooling changes are conservatively global-impact.",
+      "changed_paths": ["tools/bootstrap.txt"],
+      "expected_direct": [
+        "docs.assemble",
+        "docs.diagrams",
+        "product.build",
+        "publication",
+        "repository.validate",
+        "verification"
+      ],
+      "expected_affected": [
+        "docs.assemble",
+        "docs.diagrams",
+        "product.build",
+        "publication",
+        "repository.validate",
+        "verification"
+      ]
+    }
+  ]
+}
