@@ -1,0 +1,22 @@
+tasks:
+  product.build:
+    command: 'python tools/product_build.py'
+    inputs:
+      - 'src/product/**'
+      - 'tools/product_build.py'
+    outputs:
+      - 'out/product'
+    options:
+      cache: true
+
+  publication:
+    command: 'python tools/publication.py'
+    inputs:
+      - 'release/**'
+      - 'tools/publication.py'
+    outputs:
+      - 'out/publication'
+    deps:
+      - 'product.build'
+    options:
+      cache: true
