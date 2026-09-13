@@ -1,55 +1,73 @@
 # Candidate-specific translation of fixture/capability-model.json.
 # This is experiment configuration, not a proposed production BUILD model.
+#
+# Each logical capability directly owns the source selectors that should impact
+# it. Only real producer/consumer relationships are expressed as dependencies.
 
-files(
-    name="global_inputs",
-    sources=["project.json", "tools/**", ".github/workflows/**"],
-)
-
-files(name="product_source", sources=["src/product/**"])
-files(name="product_config", sources=["config/product.json"])
-files(name="test_inputs", sources=["tests/**"])
-files(name="verification_config", sources=["config/verification.json"])
-files(name="docs_diagram_inputs", sources=["docs/_diagrams/**", "docs/_diagram-theme/**"])
-files(name="docs_authored_inputs", sources=["docs/**/*.md"])
-files(name="publication_inputs", sources=["release/**"])
-files(name="unrelated_readme", sources=["README.md"])
-
-target(
+repo_capability(
     name="repository_validate_cap",
-    dependencies=[":global_inputs"],
+    sources=["project.json", "tools/**", ".github/workflows/**"],
     tags=["capability", "cap:repository.validate"],
 )
 
-target(
+repo_capability(
     name="product_build_cap",
-    dependencies=[":global_inputs", ":product_source", ":product_config"],
+    sources=[
+        "project.json",
+        "tools/**",
+        ".github/workflows/**",
+        "src/product/**",
+        "config/product.json",
+    ],
     tags=["capability", "cap:product.build"],
 )
 
-target(
+repo_capability(
     name="verification_cap",
-    dependencies=[":global_inputs", ":product_source", ":test_inputs", ":verification_config"],
+    sources=[
+        "project.json",
+        "tools/**",
+        ".github/workflows/**",
+        "src/product/**",
+        "tests/**",
+        "config/verification.json",
+    ],
     tags=["capability", "cap:verification"],
 )
 
-target(
+repo_capability(
     name="docs_diagrams_cap",
-    dependencies=[":global_inputs", ":docs_diagram_inputs"],
+    sources=[
+        "project.json",
+        "tools/**",
+        ".github/workflows/**",
+        "docs/_diagrams/**",
+        "docs/_diagram-theme/**",
+    ],
     tags=["capability", "cap:docs.diagrams"],
 )
 
-target(
+repo_capability(
     name="docs_assemble_cap",
-    dependencies=[":global_inputs", ":docs_authored_inputs", ":docs_diagrams_cap"],
+    sources=[
+        "project.json",
+        "tools/**",
+        ".github/workflows/**",
+        "docs/**/*.md",
+    ],
+    dependencies=[":docs_diagrams_cap"],
     tags=["capability", "cap:docs.assemble"],
 )
 
-target(
+repo_capability(
     name="publication_cap",
+    sources=[
+        "project.json",
+        "tools/**",
+        ".github/workflows/**",
+        "release/**",
+    ],
     dependencies=[
-        ":global_inputs",
-        ":publication_inputs",
         ":product_build_cap",
         ":verification_cap",
         ":docs_assemble_cap",

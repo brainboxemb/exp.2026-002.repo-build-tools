@@ -32,6 +32,7 @@ def init_repo(path: Path) -> None:
     shutil.copytree(WORKSPACE, path, dirs_exist_ok=True)
     shutil.copy2(CANDIDATE / "pants.toml", path / "pants.toml")
     shutil.copy2(CANDIDATE / "BUILD.fixture", path / "BUILD")
+    shutil.copytree(CANDIDATE / "pants-plugins", path / "pants-plugins")
     (path / ".gitignore").write_text(".pants.d/\ndist/\n.cache/\n", encoding="utf-8")
 
     run(["git", "init", "-b", "main"], path)
@@ -126,6 +127,7 @@ def main() -> None:
 
     payload = {
         "candidate": "pants",
+        "model": "custom-source-owning-capability-target",
         "pants_version": "2.33.1",
         "scie_pants_version": "0.13.2",
         "platform": "linux-x86_64",
