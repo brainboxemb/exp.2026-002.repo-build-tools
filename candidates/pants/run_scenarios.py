@@ -68,7 +68,6 @@ def query(pants: str, path: Path, dependents: str) -> dict:
         "--changed-since=HEAD~1",
         f"--changed-dependents={dependents}",
         "peek",
-        "::",
     ]
     start = time.perf_counter()
     result = run(argv, path)
