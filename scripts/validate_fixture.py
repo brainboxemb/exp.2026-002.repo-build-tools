@@ -74,11 +74,17 @@ def main() -> None:
         assert scenario_id not in ids, f"duplicate scenario id: {scenario_id}"
         ids.add(scenario_id)
 
+        operation = scenario.get("operation", "modify")
+        assert operation in {"modify", "delete"}, (
+            f"{scenario_id}: operation must be 'modify' or 'delete', got {operation!r}"
+        )
+
         changed_paths = scenario.get("changed_paths", [])
         assert changed_paths, f"{scenario_id}: changed_paths must not be empty"
         for relative in changed_paths:
             path = WORKSPACE / relative
             assert path.exists(), f"{scenario_id}: fixture path does not exist: {relative}"
+            assert path.is_file(), f"{scenario_id}: fixture mutation path must be a file: {relative}"
 
         direct = set(scenario.get("expected_direct", []))
         affected = set(scenario.get("expected_affected", []))

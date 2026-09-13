@@ -92,6 +92,14 @@
         "repository.validate",
         "verification"
       ]
+    },
+    {
+      "id": "S10-delete-product-source",
+      "description": "Deleting product source must still affect the capabilities that owned that path before deletion, plus downstream publication.",
+      "operation": "delete",
+      "changed_paths": ["src/product/core.txt"],
+      "expected_direct": ["product.build", "verification"],
+      "expected_affected": ["product.build", "publication", "verification"]
     }
   ]
 }
