@@ -33,7 +33,13 @@ jobs:
             -o "$archive"
           printf '%s  %s\n' 'baa6f0cda8fe9d7513ffebb2908cfd952888c66659b795da02a14ef2156eb5c7' "$archive" | sha256sum -c -
           mkdir -p "$bindir"
-          tar -xJf "$archive" -C "$bindir"
+          python3 - "$archive" "$bindir" <<'PY'
+          import sys
+          import tarfile
+          archive, bindir = sys.argv[1:]
+          with tarfile.open(archive, mode='r:xz') as handle:
+              handle.extractall(bindir)
+          PY
           moon_bin="$(find "$bindir" -type f -name moon -perm -111 -print -quit)"
           test -n "$moon_bin"
           echo "MOON_BIN=$moon_bin" >> "$GITHUB_ENV"
