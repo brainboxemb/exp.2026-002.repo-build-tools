@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "note": "Experiment fixture only; not a proposed project.yml schema.",
+  "global_inputs": [
+    "project.json",
+    "tools/**",
+    ".github/workflows/**"
+  ],
+  "capabilities": {
+    "repository.validate": {
+      "owner": "generic",
+      "inputs": [
+        "project.json",
+        "tools/**",
+        ".github/workflows/**"
+      ],
+      "depends_on": []
+    },
+    "product.build": {
+      "owner": "domain.product",
+      "inputs": [
+        "src/product/**",
+        "config/product.json"
+      ],
+      "depends_on": []
+    },
+    "verification": {
+      "owner": "domain.verification",
+      "inputs": [
+        "src/product/**",
+        "tests/**",
+        "config/verification.json"
+      ],
+      "depends_on": []
+    },
+    "docs.diagrams": {
+      "owner": "domain.docs",
+      "inputs": [
+        "docs/_diagrams/**",
+        "docs/_diagram-theme/**"
+      ],
+      "depends_on": []
+    },
+    "docs.assemble": {
+      "owner": "domain.docs",
+      "inputs": [
+        "docs/**/*.md"
+      ],
+      "depends_on": [
+        "docs.diagrams"
+      ]
+    },
+    "publication": {
+      "owner": "generic-or-domain",
+      "inputs": [
+        "release/**"
+      ],
+      "depends_on": [
+        "product.build",
+        "verification",
+        "docs.assemble"
+      ]
+    }
+  },
+  "execution_modes": {
+    "incremental": {
+      "affected_pruning": true,
+      "description": "Select affected capabilities; domain incremental/cache policy may remain active."
+    },
+    "clean": {
+      "affected_pruning": false,
+      "description": "Run an explicitly requested capability set from clean domain/workspace state."
+    },
+    "qualification": {
+      "affected_pruning": false,
+      "description": "Run an explicitly selected conformance set independent of ordinary diff pruning."
+    },
+    "release": {
+      "affected_pruning": false,
+      "description": "Produce the complete required release set for one exact revision."
+    }
+  }
+}
