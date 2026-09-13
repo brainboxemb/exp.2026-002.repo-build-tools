@@ -53,9 +53,7 @@ jobs:
         run: |
           $archive = Join-Path $env:RUNNER_TEMP 'moon.zip'
           $bindir = Join-Path $env:RUNNER_TEMP 'moon-bin'
-          Invoke-WebRequest \
-            -Uri 'https://github.com/moonrepo/moon/releases/download/v2.5.4/moon_cli-x86_64-pc-windows-msvc.zip' \
-            -OutFile $archive
+          Invoke-WebRequest -Uri 'https://github.com/moonrepo/moon/releases/download/v2.5.4/moon_cli-x86_64-pc-windows-msvc.zip' -OutFile $archive
           $digest = (Get-FileHash -Algorithm SHA256 $archive).Hash.ToLowerInvariant()
           if ($digest -ne '14d3515cb9f96e75c76f84da62492774edfc6a76d71cee057d5297f129088f63') {
             throw "Unexpected moon archive digest: $digest"
