@@ -89,7 +89,11 @@ def run_scenario(pants: str, scenario: dict) -> dict:
         init_repo(repo)
         mutate(repo, scenario)
 
-        direct = query(pants, repo, "direct")
+        # Neutral `expected_direct` means capabilities whose own declared input
+        # selectors matched. In Pants vocabulary that is changed targets with no
+        # dependent expansion. `direct` in Pants means one downstream hop and is
+        # therefore intentionally *not* used for this experiment field.
+        direct = query(pants, repo, "none")
         affected = query(pants, repo, "transitive")
 
         expected_direct = sorted(scenario["expected_direct"])
