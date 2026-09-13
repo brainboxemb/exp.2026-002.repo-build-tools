@@ -43,11 +43,15 @@ def init_repo(path: Path) -> None:
 
 
 def mutate(path: Path, scenario: dict) -> None:
+    operation = scenario.get("operation", "modify")
     for relative in scenario["changed_paths"]:
         target = path / relative
-        with target.open("a", encoding="utf-8") as handle:
-            handle.write(f"\nscenario={scenario['id']}\n")
-    run(["git", "add", "."], path)
+        if operation == "delete":
+            target.unlink()
+        else:
+            with target.open("a", encoding="utf-8") as handle:
+                handle.write(f"\nscenario={scenario['id']}\n")
+    run(["git", "add", "-A"], path)
     run(["git", "commit", "-m", scenario["id"]], path)
 
 
@@ -102,6 +106,7 @@ def run_scenario(pants: str, scenario: dict) -> dict:
 
         return {
             "id": scenario["id"],
+            "operation": scenario.get("operation", "modify"),
             "changed_paths": scenario["changed_paths"],
             "expected_direct": expected_direct,
             "actual_direct": direct["capabilities"],
