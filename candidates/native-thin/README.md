@@ -44,6 +44,37 @@ rule: when a changed path matches one of them, every declared capability is
 selected directly. This is why the global project/tooling scenarios remain data,
 not hard-coded path exceptions in the implementation.
 
+## Qualification evidence
+
+Workflow run `34755447995` qualified the same nine neutral scenarios on both
+Ubuntu and native Windows:
+
+- Linux: 9/9 scenarios passed;
+- Windows: 9/9 scenarios passed;
+- Linux evidence artifact digest:
+  `sha256:9c178eda54f850ba09dac21aeb2dd3044d0819197015a4c1da95eda158be763c`;
+- Windows evidence artifact digest:
+  `sha256:1cf06bd33f3db86467ab1b7025777dabb25f0c05c72426a7c05e0c4a27f7df64`.
+
+Observed median query time in this isolated harness was approximately:
+
+- Linux: `0.032 s` per query;
+- Windows: `0.088 s` per query.
+
+These timings are useful only as rough implementation-cost evidence. They are
+not a benchmark claim against Pants or moonrepo because startup/runtime models
+are different and the fixture is intentionally tiny.
+
+## Ownership cost and limits
+
+The advantage is that the generic behavior is very small and uses only Python +
+Git, which are already part of the current tooling environment. The cost is that
+we would own selector semantics, graph validation, rename/delete behavior,
+error handling, schema evolution and all future affected-query features.
+
+The prototype therefore demonstrates feasibility, not that a native
+implementation is automatically the best choice.
+
 ## Evaluation question
 
 The value of this candidate is not simply whether nine scenarios pass. The
