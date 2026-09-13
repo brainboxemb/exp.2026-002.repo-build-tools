@@ -1,0 +1,5 @@
+[GLOBAL]
+pants_version = "2.33.1"
+pantsd = false
+pythonpath = ["%(buildroot)s/pants-plugins"]
+backend_packages = ["repo_capability"]

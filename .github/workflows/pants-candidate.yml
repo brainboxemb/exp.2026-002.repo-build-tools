@@ -1,0 +1,53 @@
+name: Pants candidate
+
+on:
+  push:
+    branches:
+      - candidate/pants
+  pull_request:
+    paths:
+      - 'candidates/pants/**'
+      - 'fixture/**'
+      - 'scripts/validate_fixture.py'
+      - '.github/workflows/pants-candidate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  affected:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate neutral fixture
+        run: python3 scripts/validate_fixture.py
+
+      - name: Install pinned scie-pants launcher
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://github.com/pantsbuild/scie-pants/releases/download/v0.13.2/scie-pants-linux-x86_64"
+          dest="${RUNNER_TEMP}/pants"
+          curl --proto '=https' --tlsv1.2 --retry 3 --retry-delay 2 --retry-all-errors -fsSL "$url" -o "$dest"
+          printf '%s  %s\n' '74a1e53bc50d6ef6ce1bc67bd9f7b48e549505e0a2453ad4d5ccbc72b0bea874' "$dest" | sha256sum -c -
+          chmod +x "$dest"
+          echo "PANTS_BIN=$dest" >> "$GITHUB_ENV"
+
+      - name: Run Pants affected scenarios
+        run: >-
+          python3 candidates/pants/run_scenarios.py
+          --pants "$PANTS_BIN"
+          --output candidates/pants/results/pants-linux.json
+
+      - name: Upload Pants evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pants-candidate-evidence
+          path: candidates/pants/results/pants-linux.json
+          if-no-files-found: warn
+          retention-days: 14
