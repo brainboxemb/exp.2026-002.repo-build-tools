@@ -1,0 +1,19 @@
+tasks:
+  java.canonical:
+    command: 'bash .experiment/java_canonical.sh'
+    inputs:
+      - 'project.yml'
+      - 'project.java.yml'
+      - 'pom.xml'
+      - 'mvnw'
+      - 'mvnw.cmd'
+      - '.mvn/**'
+      - 'src/main/**'
+      - 'src/test/**'
+      - '.experiment/java_canonical.sh'
+      - '.experiment/tool-java-project.sha'
+    outputs:
+      - 'bld/java'
+      - 'evidence/java-canonical'
+    options:
+      cache: true
