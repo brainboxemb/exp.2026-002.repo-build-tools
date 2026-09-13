@@ -1,0 +1,69 @@
+tasks:
+  repository.validate:
+    command: 'git --version'
+    inputs:
+      - 'project.json'
+      - 'tools/**'
+      - '.github/workflows/**'
+    options:
+      cache: false
+
+  product.build:
+    command: 'git --version'
+    inputs:
+      - 'project.json'
+      - 'tools/**'
+      - '.github/workflows/**'
+      - 'src/product/**'
+      - 'config/product.json'
+    options:
+      cache: false
+
+  verification:
+    command: 'git --version'
+    inputs:
+      - 'project.json'
+      - 'tools/**'
+      - '.github/workflows/**'
+      - 'src/product/**'
+      - 'tests/**'
+      - 'config/verification.json'
+    options:
+      cache: false
+
+  docs.diagrams:
+    command: 'git --version'
+    inputs:
+      - 'project.json'
+      - 'tools/**'
+      - '.github/workflows/**'
+      - 'docs/_diagrams/**'
+      - 'docs/_diagram-theme/**'
+    options:
+      cache: false
+
+  docs.assemble:
+    command: 'git --version'
+    inputs:
+      - 'project.json'
+      - 'tools/**'
+      - '.github/workflows/**'
+      - 'docs/**/*.md'
+    deps:
+      - 'docs.diagrams'
+    options:
+      cache: false
+
+  publication:
+    command: 'git --version'
+    inputs:
+      - 'project.json'
+      - 'tools/**'
+      - '.github/workflows/**'
+      - 'release/**'
+    deps:
+      - 'product.build'
+      - 'verification'
+      - 'docs.assemble'
+    options:
+      cache: false

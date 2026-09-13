@@ -1,0 +1,91 @@
+name: moonrepo candidate
+
+on:
+  push:
+    branches:
+      - candidate/moonrepo
+  pull_request:
+    paths:
+      - 'candidates/moonrepo/**'
+      - 'fixture/**'
+      - 'scripts/validate_fixture.py'
+      - '.github/workflows/moonrepo-candidate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  affected:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate neutral fixture
+        run: python scripts/validate_fixture.py
+
+      - name: Install pinned moon binary on Linux
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="${RUNNER_TEMP}/moon.tar.xz"
+          bindir="${RUNNER_TEMP}/moon-bin"
+          curl --proto '=https' --tlsv1.2 --retry 3 --retry-delay 2 --retry-all-errors -fsSL \
+            'https://github.com/moonrepo/moon/releases/download/v2.5.4/moon_cli-x86_64-unknown-linux-gnu.tar.xz' \
+            -o "$archive"
+          printf '%s  %s\n' 'baa6f0cda8fe9d7513ffebb2908cfd952888c66659b795da02a14ef2156eb5c7' "$archive" | sha256sum -c -
+          mkdir -p "$bindir"
+          tar -xJf "$archive" -C "$bindir"
+          moon_bin="$(find "$bindir" -type f -name moon -perm -111 -print -quit)"
+          test -n "$moon_bin"
+          echo "MOON_BIN=$moon_bin" >> "$GITHUB_ENV"
+
+      - name: Install pinned moon binary on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'moon.zip'
+          $bindir = Join-Path $env:RUNNER_TEMP 'moon-bin'
+          Invoke-WebRequest -Uri 'https://github.com/moonrepo/moon/releases/download/v2.5.4/moon_cli-x86_64-pc-windows-msvc.zip' -OutFile $archive
+          $digest = (Get-FileHash -Algorithm SHA256 $archive).Hash.ToLowerInvariant()
+          if ($digest -ne '14d3515cb9f96e75c76f84da62492774edfc6a76d71cee057d5297f129088f63') {
+            throw "Unexpected moon archive digest: $digest"
+          }
+          Expand-Archive -Path $archive -DestinationPath $bindir
+          $moon = Get-ChildItem -Path $bindir -Recurse -Filter 'moon.exe' | Select-Object -First 1
+          if (-not $moon) { throw 'moon.exe not found after extraction' }
+          "MOON_BIN=$($moon.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Run moon affected scenarios on Linux
+        if: runner.os == 'Linux'
+        shell: bash
+        run: >-
+          python3 candidates/moonrepo/run_scenarios.py
+          --moon "$MOON_BIN"
+          --platform linux-x86_64
+          --output candidates/moonrepo/results/moon-linux.json
+
+      - name: Run moon affected scenarios on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: >-
+          python candidates/moonrepo/run_scenarios.py
+          --moon "$env:MOON_BIN"
+          --platform windows-x86_64
+          --output candidates/moonrepo/results/moon-windows.json
+
+      - name: Upload moon evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: moonrepo-candidate-${{ runner.os }}
+          path: candidates/moonrepo/results/*.json
+          if-no-files-found: warn
+          retention-days: 14
