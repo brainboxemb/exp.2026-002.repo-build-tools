@@ -1,0 +1,52 @@
+tasks:
+  docs.diagrams:
+    command: 'python .experiment/run_docs_task.py diagrams'
+    inputs:
+      - 'project.yml'
+      - 'docs/_diagrams/**'
+      - 'docs/_diagram-theme/**'
+      - 'tools/generate_architecture_diagrams.py'
+      - 'tools/generate_timing_detail_diagrams.py'
+      - 'tools/generate_data_display_diagrams.py'
+      - 'tools/generate_system_model_diagrams.py'
+      - 'tools/requirements-docs.txt'
+      - '.experiment/run_docs_task.py'
+      - '.experiment/tool-eng-docs.sha'
+    outputs:
+      - 'bld/docs/architecture'
+      - 'evidence/docs-diagrams'
+    options:
+      cache: true
+
+  docs.planning:
+    command: 'python .experiment/run_docs_task.py planning'
+    inputs:
+      - 'docs/11-SIP-software-implementation-planning.md'
+      - 'docs/_data/**'
+      - 'tools/generate_sip_planning.py'
+      - 'tools/generate_sip_step_pdfs.py'
+      - 'tools/generate_sip_manager_roadmap.py'
+      - 'tools/requirements-docs.txt'
+      - '.experiment/run_docs_task.py'
+    outputs:
+      - 'bld/docs/planning'
+      - 'evidence/docs-planning'
+    options:
+      cache: true
+
+  docs.assemble:
+    command: 'python .experiment/run_docs_task.py assemble'
+    inputs:
+      - 'docs/*.md'
+      - 'tools/generate_documents.py'
+      - '.experiment/run_docs_task.py'
+    deps:
+      - 'docs.diagrams'
+      - 'docs.planning'
+    outputs:
+      - 'bld/docs/documents'
+      - 'bld/docs/assets'
+      - 'bld/docs/README.md'
+      - 'evidence/docs-assemble'
+    options:
+      cache: true
