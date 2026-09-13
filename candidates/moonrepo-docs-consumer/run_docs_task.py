@@ -153,10 +153,20 @@ def validate_assemble() -> dict:
         if not path.is_file():
             raise RuntimeError(f"required assembled output missing: {path}")
     architecture_book = (root / "documents/architecture-book.md").read_text(encoding="utf-8")
-    if "31-01-SDD-02-java-component-design.md" not in architecture_book:
-        raise RuntimeError("active SDD missing from architecture book")
-    if "31-01-SDD-01-data-and-display-design.md" in architecture_book:
-        raise RuntimeError("deferred SDD unexpectedly present in architecture book")
+    active_marker = (
+        "**Source document:** [31-01-SDD-02-java-component-design.md]"
+        "(./31-01-SDD-02-java-component-design.md)"
+    )
+    deferred_markers = [
+        "**Source document:** [31-01-SDD-01-data-and-display-design.md]"
+        "(./31-01-SDD-01-data-and-display-design.md)",
+        "**Source document:** [31-01-SDD-03-backoffice-transport-design.md]"
+        "(./31-01-SDD-03-backoffice-transport-design.md)",
+    ]
+    if active_marker not in architecture_book:
+        raise RuntimeError("active SDD section missing from architecture book")
+    if any(marker in architecture_book for marker in deferred_markers):
+        raise RuntimeError("deferred SDD section unexpectedly present in architecture book")
     return {
         "document_count": sum(1 for path in (root / "documents").glob("*.md")),
         "asset_count": sum(1 for path in (root / "assets/architecture").iterdir() if path.is_file()),
