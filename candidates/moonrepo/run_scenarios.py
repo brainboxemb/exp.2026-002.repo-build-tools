@@ -18,8 +18,20 @@ WORKSPACE = FIXTURE / "workspace"
 SCENARIOS = json.loads((FIXTURE / "scenarios.json").read_text(encoding="utf-8"))["scenarios"]
 
 
-def run(argv: list[str], cwd: Path, *, check: bool = True) -> subprocess.CompletedProcess[str]:
-    result = subprocess.run(argv, cwd=cwd, text=True, capture_output=True)
+def run(
+    argv: list[str],
+    cwd: Path,
+    *,
+    check: bool = True,
+    stdin: str | None = None,
+) -> subprocess.CompletedProcess[str]:
+    result = subprocess.run(
+        argv,
+        cwd=cwd,
+        text=True,
+        input=stdin,
+        capture_output=True,
+    )
     if check and result.returncode != 0:
         raise RuntimeError(
             f"command failed ({result.returncode}): {' '.join(argv)}\n"
@@ -56,28 +68,54 @@ def extract_capabilities(stdout: str) -> tuple[list[str], list[str]]:
     if not isinstance(tasks, dict):
         raise RuntimeError(f"moon query returned unexpected tasks shape: {type(tasks)!r}")
 
-    raw_targets = sorted(str(target) for target in tasks)
+    # `query tasks` groups tasks by project. Keep the parser tolerant of a flat
+    # target map as well so evidence remains useful if moon changes presentation.
+    raw_targets: list[str] = []
     capabilities: set[str] = set()
-    for target in raw_targets:
-        task_id = target.split(":", 1)[-1]
-        capabilities.add(task_id)
-    return sorted(capabilities), raw_targets
+
+    if any(":" in str(key) for key in tasks):
+        for target in sorted(str(key) for key in tasks):
+            raw_targets.append(target)
+            capabilities.add(target.split(":", 1)[-1])
+    else:
+        for project_id, project_tasks in tasks.items():
+            if not isinstance(project_tasks, dict):
+                continue
+            for task_id in sorted(str(key) for key in project_tasks):
+                raw_targets.append(f"{project_id}:{task_id}")
+                capabilities.add(task_id)
+
+    return sorted(capabilities), sorted(raw_targets)
 
 
-def query(moon: str, path: Path, downstream: str) -> dict:
+def changed_files(moon: str, path: Path) -> subprocess.CompletedProcess[str]:
+    return run(
+        [
+            moon,
+            "query",
+            "changed-files",
+            "--base",
+            "HEAD~1",
+            "--head",
+            "HEAD",
+        ],
+        path,
+    )
+
+
+def query(moon: str, path: Path, downstream: str, changed_json: str) -> dict:
     argv = [
         moon,
         "query",
-        "affected",
-        "--base",
-        "HEAD~1",
-        "--head",
-        "HEAD",
+        "tasks",
+        "--affected",
+        "--upstream",
+        "none",
         "--downstream",
         downstream,
     ]
     start = time.perf_counter()
-    result = run(argv, path)
+    result = run(argv, path, stdin=changed_json)
     elapsed = time.perf_counter() - start
     capabilities, targets = extract_capabilities(result.stdout)
     return {
@@ -95,16 +133,25 @@ def run_scenario(moon: str, scenario: dict) -> dict:
         init_repo(repo)
         mutate(repo, scenario)
 
-        direct = query(moon, repo, "none")
-        affected = query(moon, repo, "deep")
+        changed = changed_files(moon, repo)
+        changed_payload = json.loads(changed.stdout)
+        changed_paths = sorted(str(path) for path in changed_payload.get("files", []))
+
+        direct = query(moon, repo, "none", changed.stdout)
+        affected = query(moon, repo, "deep", changed.stdout)
 
         expected_direct = sorted(scenario["expected_direct"])
         expected_affected = sorted(scenario["expected_affected"])
-        passed = direct["capabilities"] == expected_direct and affected["capabilities"] == expected_affected
+        passed = (
+            changed_paths == sorted(scenario["changed_paths"])
+            and direct["capabilities"] == expected_direct
+            and affected["capabilities"] == expected_affected
+        )
 
         return {
             "id": scenario["id"],
             "changed_paths": scenario["changed_paths"],
+            "moon_changed_paths": changed_paths,
             "expected_direct": expected_direct,
             "actual_direct": direct["capabilities"],
             "expected_affected": expected_affected,
@@ -130,6 +177,7 @@ def main() -> None:
         status = "PASS" if result["passed"] else "FAIL"
         print(
             f"{status} {result['id']}: "
+            f"changed={result['moon_changed_paths']} "
             f"direct={result['actual_direct']} affected={result['actual_affected']}"
         )
 
